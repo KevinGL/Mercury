@@ -14,12 +14,13 @@ namespace Mercury
         private :
 
         std::map<std::wstring, unsigned int> tokens;
-        std::map<std::wstring, unsigned int> tokenToId;
+        //std::map<std::wstring, unsigned int> tokenToId;
         std::map<unsigned int, std::wstring> idToToken;
 
         public :
 
         void learn(const std::string path);
+        void getFirstTokens(const std::wstring corpus, unsigned int &id);
         void loadDatas(const std::string path);
 
         std::vector<unsigned int> encode(const std::wstring text);
@@ -45,11 +46,25 @@ namespace Mercury
         void prompt(const std::wstring text);
     };
 
-    bool inArrayWchar(const std::vector<wchar_t> array, const wchar_t value);
-    bool inArrayWstring(const std::vector<std::wstring> array, const std::wstring value);
     bool isAlNum(const wchar_t ch);
     std::wstring trim(const std::wstring text);
     unsigned int wstringToInt(const std::wstring value);
     std::vector<std::wstring> explode(std::wstring str, const wchar_t separator);
-    std::vector<std::wstring> getMaxPairs(std::map<std::wstring, unsigned int> pairs);
+    std::map<std::wstring, unsigned int> getGroupsFromCorpus(const std::wstring corpus, unsigned int groupsSize);
+    std::vector<std::wstring> getMaxGroups(std::map<std::wstring, unsigned int> pairs);
+
+    template <typename T>
+    bool inArray(const std::vector<T> array, const T value)
+    {
+        for(const T item : array)
+        {
+            if(item == value)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
+
