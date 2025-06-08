@@ -7,6 +7,8 @@
 #include <sstream>
 #include <conio.h>
 
+#define MERCURY_MAX_SIZE_TOKENS 5
+
 namespace Mercury
 {
     class Tokenizer

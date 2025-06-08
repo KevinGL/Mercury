@@ -2,7 +2,7 @@
 
 bool Mercury::isAlNum(const wchar_t ch)
 {
-    std::vector<wchar_t> specialChars = {L'â', L'ê', L'î', L'ô', L'û', L'é', L'à', L'è', L'ì', L'ò', L'ù', L' ', L'-'};
+    std::vector<wchar_t> specialChars = {L'â', L'ê', L'î', L'ô', L'û', L'é', L'à', L'è', L'ì', L'ò', L'ù', L'-', L'?', L'\''};
     std::vector<wchar_t> forbidden = {L',', L'.', L';', L':', L'|', L' '};
 
     if((std::isalnum(ch) || inArray(specialChars, ch)) && !inArray(forbidden, ch))
@@ -53,7 +53,10 @@ std::map<std::wstring, unsigned int> Mercury::getGroupsFromCorpus(const std::wst
 
         for(size_t j = 0 ; j < groupsSize ; j++)
         {
-            group += corpusTrim[i + j];
+            if(isAlNum(corpusTrim[i + j]))
+            {
+                group += corpusTrim[i + j];
+            }
         }
 
         groups[group]++;
