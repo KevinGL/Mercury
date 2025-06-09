@@ -25,14 +25,16 @@ Mercury::ChatBot::ChatBot()
         file.close();
     }
 
-    tokenizer.loadDatas(path);
+    //tokenizer.loadDatas(path);
 }
 
 void Mercury::ChatBot::learn()
 {
     tokenizer.learn(path);
+    std::cout << "Mercury : Learning tokenizer ok ..." << std::endl;
 
-    std::cout << "Mercury : Learning ok ..." << std::endl;
+    embedder.learn(path, tokenizer);
+    std::cout << "Mercury : Learning embeddings ok ..." << std::endl;
 }
 
 void Mercury::ChatBot::prompt(const std::wstring text)

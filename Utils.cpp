@@ -147,3 +147,48 @@ std::vector<std::wstring> Mercury::getMaxGroups(std::map<std::wstring, unsigned 
 
     return res;
 }
+
+void Mercury::softmax(Layer &layer, std::vector<float> &res)
+{
+    float maxVal = -1000.0f;
+    std::vector<float> expVals;
+
+    for(const auto& neuron : layer.neurons)
+    {
+        if(neuron.output > maxVal)
+        {
+            maxVal = neuron.output;
+        }
+    }
+
+    float sum = 0.0f;
+
+    for(const auto& neuron : layer.neurons)
+    {
+        float e = std::exp(neuron.output - maxVal);
+        expVals.push_back(e);
+        sum += e;
+    }
+
+    for(float e : expVals)
+    {
+        res.push_back(e / sum);
+    }
+}
+
+size_t Mercury::getIndexMax(std::vector<float> &values)
+{
+    size_t res;
+    float valMax = -1.0f;
+
+    for(size_t i = 0 ; i < values.size() ; i++)
+    {
+        if(values[i] > valMax)
+        {
+            valMax = values[i];
+            res = i;
+        }
+    }
+
+    return res;
+}

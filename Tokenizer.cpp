@@ -128,6 +128,11 @@ std::vector<unsigned int> Mercury::Tokenizer::encode(const std::wstring text)
 {
     std::vector<unsigned int> res;
 
+    if(text == L"")
+    {
+        return res;
+    }
+
     std::vector<std::wstring> words;
 
     std::wstring word = L"";
@@ -160,6 +165,11 @@ std::vector<unsigned int> Mercury::Tokenizer::encode(const std::wstring text)
                 if(size > w.length() - offset)
                 {
                     size = w.length() - offset;
+                }
+
+                if(size == 0)
+                {
+                    break;
                 }
 
                 std::wstring token = w;
@@ -202,6 +212,18 @@ std::wstring Mercury::Tokenizer::decode(std::vector<unsigned int> &localTokens)
         {
             res += idToToken[localToken];
         }
+    }
+
+    return res;
+}
+
+std::vector<unsigned int> Mercury::Tokenizer::getArrayIds()
+{
+    std::vector<unsigned int> res;
+
+    for(const auto& kv : tokens)
+    {
+        res.push_back(kv.second);
     }
 
     return res;
