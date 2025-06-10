@@ -2,7 +2,7 @@
 
 void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
 {
-    InitNetwork();
+    InitNetwork(tokenizer);
 
     std::vector<unsigned int> arrayIds = tokenizer.getArrayIds();
 
@@ -89,107 +89,38 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
 
         if(pair.first != 1 && pair.second != 1)     //Case spaces
         {
-            const std::vector<float> embedding = embeddings[pair.first];
+            std::vector<float> embedding = embeddings[pair.first];
 
-            size_t indexInput = 0;
-
-            for(const float coord : embedding)
-            {
-                predictionNetwork.input.neurons[indexInput].output = coord;
-
-                indexInput++;
-            }
-
-            for(size_t i = 0 ; i < MERCURY_SIZE_HIDDEN_LAYER ; i++)
-            {
-                predictionNetwork.hidden.neurons[i].output = 0.0f;
-
-                for(size_t j = 0 ; j < predictionNetwork.hidden.neurons[i].weights.size() ; j++)
-                {
-                    const float weight = predictionNetwork.hidden.neurons[i].weights[j];
-                    const float output = predictionNetwork.input.neurons[j].output;
-
-                    predictionNetwork.hidden.neurons[i].output += weight * output;
-                }
-
-                predictionNetwork.hidden.neurons[i].output += predictionNetwork.hidden.neurons[i].bias;
-
-                //predictionNetwork.hidden.neurons[i].output = tanh(predictionNetwork.hidden.neurons[i].output);
-
-                //std::cout << predictionNetwork.hidden.neurons[i].output << std::endl;
-            }
-
-            size_t indexOutput = 0;
-
-            for(size_t i = 0 ; i < MERCURY_MAX_TOKENS_OUTPUT_LAYER ; i++)
-            {
-                predictionNetwork.output.neurons[i].output = 0.0f;
-
-                for(size_t j = 0 ; j < predictionNetwork.output.neurons[i].weights.size() ; j++)
-                {
-                    const float weight = predictionNetwork.output.neurons[i].weights[j];
-                    const float output = predictionNetwork.hidden.neurons[j].output;
-
-                    predictionNetwork.output.neurons[i].output += weight * output;
-                }
-
-                predictionNetwork.output.neurons[i].output += predictionNetwork.output.neurons[i].bias;
-
-                //predictionNetwork.output.neurons[i].output = tanh(predictionNetwork.output.neurons[i].output);
-
-                //std::cout << predictionNetwork.output.neurons[i].output << std::endl;
-
-                indexOutput++;
-            }
+            predictionNetwork.feedForward(embedding);
 
             std::vector<float> vectorProba;
-
-            softmax(predictionNetwork.output, vectorProba);
-
+            softmax(predictionNetwork.getLayer("output"), vectorProba);
             const size_t indexMax = getIndexMax(vectorProba);
+            const unsigned int tokenPredicted = arrayIds[indexMax];
 
-            std::wcout << L"Input : " << pair.first << L" (" << tokenizer.getIds()[pair.first] << L")" << std::endl;
-            std::wcout << L"Ouput : " << arrayIds[indexMax] << L" (" << tokenizer.getIds()[arrayIds[indexMax]] << L")" << std::endl;
-            std::wcout << L"Attempted : " << pair.second << L" (" << tokenizer.getIds()[pair.second] << L")" << std::endl << std::endl;
+            std::wcout << L"First token : " << pair.first << L" (" << tokenizer.getIds()[pair.first] << L")" << std::endl;
+            std::wcout << L"Second token : " << pair.second << L" (" << tokenizer.getIds()[pair.second] << L")" << std::endl;
+            std::wcout << L"Predicted : " << tokenPredicted << L" (" << tokenizer.getIds()[tokenPredicted] << L")" << std::endl;
+
+            const int indexAttempted = indexArray(arrayIds, pair.second);
+
+            //if(indexAttempted > -1 && indexAttempted < MERCURY_MAX_TOKENS_OUTPUT_LAYER)
+            if(indexAttempted > -1 && indexAttempted < tokenizer.getTokens().size())
+            {
+                std::vector<float> vectorOneHot = getVectorOneHot(indexAttempted, tokenizer.getTokens().size());
+                const float crossEntropy = getCrossEntropy(vectorProba, vectorOneHot, tokenizer.getTokens().size());
+
+                std::cout << "Cross entropy : " << crossEntropy << std::endl;
+            }
+
+            std::cout << std::endl;
+
             getch();
         }
     }
 }
 
-void Mercury::Embedder::InitNetwork()
+void Mercury::Embedder::InitNetwork(Mercury::Tokenizer &tokenizer)
 {
-    for(size_t i = 0 ; i < MERCURY_MAX_SIZE_EMBEDDINGS ; i++)
-    {
-        Neuron neuron;
-
-        predictionNetwork.input.neurons.push_back(neuron);
-    }
-
-    for(size_t i = 0 ; i < MERCURY_SIZE_HIDDEN_LAYER ; i++)
-    {
-        Neuron neuron;
-
-        for(size_t j = 0 ; j < MERCURY_MAX_SIZE_EMBEDDINGS ; j++)
-        {
-            neuron.weights.push_back((rand() % 101) / 100.0f);
-        }
-
-        neuron.bias = (rand() % 101) / 100.0f;
-
-        predictionNetwork.hidden.neurons.push_back(neuron);
-    }
-
-    for(size_t i = 0 ; i < MERCURY_MAX_TOKENS_OUTPUT_LAYER ; i++)
-    {
-        Neuron neuron;
-
-        for(size_t j = 0 ; j < MERCURY_SIZE_HIDDEN_LAYER ; j++)
-        {
-            neuron.weights.push_back((rand() % 101) / 100.0f);
-        }
-
-        neuron.bias = (rand() % 101) / 100.0f;
-
-        predictionNetwork.output.neurons.push_back(neuron);
-    }
+    predictionNetwork.Init(tokenizer.getTokens().size());
 }

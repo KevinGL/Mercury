@@ -113,6 +113,16 @@ std::vector<std::wstring> Mercury::explode(std::wstring str, const wchar_t separ
     return res;
 }
 
+float Mercury::reLU(const float value)
+{
+    return value >= 0.0f ? value : 0.0f;
+}
+
+float Mercury::derivReLU(const float value)
+{
+    return value >= 0.0f ? 1.0f : 0.0f;
+}
+
 std::vector<std::wstring> Mercury::getMaxGroups(std::map<std::wstring, unsigned int> groups)
 {
     /*unsigned int freqMax = 0;
@@ -148,24 +158,24 @@ std::vector<std::wstring> Mercury::getMaxGroups(std::map<std::wstring, unsigned 
     return res;
 }
 
-void Mercury::softmax(Layer &layer, std::vector<float> &res)
+void Mercury::softmax(Layer *layer, std::vector<float> &res)
 {
     float maxVal = -1000.0f;
     std::vector<float> expVals;
 
-    for(const auto& neuron : layer.neurons)
+    for(const auto& neuron : layer->neurons)
     {
-        if(neuron.output > maxVal)
+        if(neuron.value > maxVal)
         {
-            maxVal = neuron.output;
+            maxVal = neuron.value;
         }
     }
 
     float sum = 0.0f;
 
-    for(const auto& neuron : layer.neurons)
+    for(const auto& neuron : layer->neurons)
     {
-        float e = std::exp(neuron.output - maxVal);
+        float e = std::exp(neuron.value - maxVal);
         expVals.push_back(e);
         sum += e;
     }
@@ -188,6 +198,40 @@ size_t Mercury::getIndexMax(std::vector<float> &values)
             valMax = values[i];
             res = i;
         }
+    }
+
+    return res;
+}
+
+std::vector<float> Mercury::getVectorOneHot(const size_t index, const unsigned int nbTokens)
+{
+    std::vector<float> res;
+
+    //for(size_t i = 0 ; i < MERCURY_MAX_TOKENS_OUTPUT_LAYER ; i++)
+    for(size_t i = 0 ; i < nbTokens ; i++)
+    {
+        if(i != index)
+        {
+            res.push_back(0.0f);
+        }
+
+        else
+        {
+            res.push_back(1.0f);
+        }
+    }
+
+    return res;
+}
+
+float Mercury::getCrossEntropy(std::vector<float> &vectorProba, std::vector<float> &vectorAttempted, const unsigned int nbTokens)
+{
+    float res = 0.0f;
+
+    //for(size_t i = 0 ; i < MERCURY_MAX_TOKENS_OUTPUT_LAYER ; i++)
+    for(size_t i = 0 ; i < nbTokens ; i++)
+    {
+        res -= vectorAttempted[i] * log(vectorProba[i]);
     }
 
     return res;

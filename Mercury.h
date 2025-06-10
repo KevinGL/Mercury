@@ -8,19 +8,17 @@
 #include <cmath>
 #include <conio.h>
 
-#define MERCURY_MAX_SIZE_TOKENS 4
+#define MERCURY_MAX_SIZE_TOKENS 3//4
 #define MERCURY_MAX_SIZE_EMBEDDINGS 4//100
 #define MERCURY_SIZE_HIDDEN_LAYER 128
-#define MERCURY_MAX_TOKENS_OUTPUT_LAYER 10000
+//#define MERCURY_MAX_TOKENS_OUTPUT_LAYER 10000
 
 namespace Mercury
 {
     struct Neuron
     {
-        std::vector<float> weights;
         float bias;
-        float output;
-        unsigned int indexLayer;
+        float value;
     };
 
     struct Layer
@@ -28,11 +26,18 @@ namespace Mercury
         std::vector<Neuron> neurons;
     };
 
-    struct Network
+    class Network
     {
-        Layer input;
-        Layer hidden;
-        Layer output;
+        private :
+
+        std::map<std::string, Layer> layers;
+        std::map<std::string, float> weights;
+
+        public :
+
+        void Init(const unsigned int nbTokens);
+        void feedForward(std::vector<float> &input);
+        Layer* getLayer(const std::string id);
     };
 
     class Tokenizer
@@ -73,7 +78,7 @@ namespace Mercury
         std::map<std::vector<float>, unsigned int> embToId;
         Network predictionNetwork;
 
-        void InitNetwork();
+        void InitNetwork(Tokenizer &tokenizer);
 
         public :
 
@@ -100,6 +105,8 @@ namespace Mercury
     unsigned int wstringToInt(const std::wstring value);
     std::vector<std::wstring> explode(std::wstring str, const wchar_t separator);
     std::map<std::wstring, unsigned int> getGroupsFromCorpus(const std::wstring corpus, unsigned int groupsSize);
+    float reLU(const float value);
+    float derivReLU(const float value);
     std::vector<std::wstring> getMaxGroups(std::map<std::wstring, unsigned int> pairs);
 
     template <typename T>
@@ -116,7 +123,24 @@ namespace Mercury
         return false;
     }
 
-    void softmax(Layer &layer, std::vector<float> &res);
+    template <typename T>
+    int indexArray(const std::vector<T> array, const T value)
+    {
+        for(size_t i = 0 ; i < array.size() ; i++)
+        {
+            if(array[i] == value)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    void softmax(Layer *layer, std::vector<float> &res);
     size_t getIndexMax(std::vector<float> &values);
+    std::vector<float> getVectorOneHot(const size_t index, const unsigned int nbTokens);
+    float getCrossEntropy(std::vector<float> &vectorProba, std::vector<float> &vectorAttempted, const unsigned int nbTokens);
+    void backPropagation(std::vector<float> &vectorProba, std::vector<float> &vectorAttempted, Network &network, std::vector<float> &embedding);
 }
 
