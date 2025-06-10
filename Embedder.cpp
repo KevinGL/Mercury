@@ -74,6 +74,8 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
         }
     }
 
+    size_t indexToken = 0;
+
     for(const std::pair<unsigned int, unsigned int> pair : pairs)
     {
         /*for(const float value : kv.second)
@@ -89,35 +91,48 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
 
         if(pair.first != 1 && pair.second != 1)     //Case spaces
         {
-            std::vector<float> embedding = embeddings[pair.first];
+            float crossEntropy;
 
-            predictionNetwork.feedForward(embedding);
-
-            std::vector<float> vectorProba;
-            softmax(predictionNetwork.getLayer("output"), vectorProba);
-            const size_t indexMax = getIndexMax(vectorProba);
-            const unsigned int tokenPredicted = arrayIds[indexMax];
-
-            std::wcout << L"First token : " << pair.first << L" (" << tokenizer.getIds()[pair.first] << L")" << std::endl;
-            std::wcout << L"Second token : " << pair.second << L" (" << tokenizer.getIds()[pair.second] << L")" << std::endl;
-            std::wcout << L"Predicted : " << tokenPredicted << L" (" << tokenizer.getIds()[tokenPredicted] << L")" << std::endl;
-
-            const int indexAttempted = indexArray(arrayIds, pair.second);
-
-            //if(indexAttempted > -1 && indexAttempted < MERCURY_MAX_TOKENS_OUTPUT_LAYER)
-            if(indexAttempted > -1 && indexAttempted < tokenizer.getTokens().size())
+            while(1)
             {
-                std::vector<float> vectorOneHot = getVectorOneHot(indexAttempted, tokenizer.getTokens().size());
-                const float crossEntropy = getCrossEntropy(vectorProba, vectorOneHot, tokenizer.getTokens().size());
+                std::vector<float> embedding = embeddings[pair.first];
 
-                std::cout << "Cross entropy : " << crossEntropy << std::endl;
+                predictionNetwork.feedForward(embedding);
+
+                std::vector<float> vectorProba;
+                softmax(predictionNetwork.getLayer("output"), vectorProba);
+                const size_t indexMax = getIndexMax(vectorProba);
+                const unsigned int tokenPredicted = arrayIds[indexMax];
+
+                const int indexAttempted = indexArray(arrayIds, pair.second);
+
+                //if(indexAttempted > -1 && indexAttempted < MERCURY_MAX_TOKENS_OUTPUT_LAYER)
+                if(indexAttempted > -1 && indexAttempted < tokenizer.getTokens().size())
+                {
+                    std::vector<float> vectorOneHot = getVectorOneHot(indexAttempted, tokenizer.getTokens().size());
+                    crossEntropy = getCrossEntropy(vectorProba, vectorOneHot, tokenizer.getTokens().size());
+
+                    //std::cout << "Cross entropy : " << crossEntropy << std::endl;
+
+                    predictionNetwork.backPropagation(vectorProba, vectorOneHot);
+                }
+
+                if(crossEntropy < 0.05f)
+                {
+                    break;
+                }
             }
 
-            std::cout << std::endl;
-
-            getch();
+            /*std::wcout << L"Learning ok for " << tokenizer.getIds()[pair.first] << L" and " << tokenizer.getIds()[pair.second] << std::endl;
+            getch();*/
         }
+
+        indexToken++;
+
+        std::cout << indexToken << " on " << pairs.size() << std::endl;
     }
+
+    predictionNetwork.save(path + "/Mercury/PredictionNetwork.txt");
 }
 
 void Mercury::Embedder::InitNetwork(Mercury::Tokenizer &tokenizer)

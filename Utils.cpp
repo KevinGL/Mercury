@@ -236,3 +236,12 @@ float Mercury::getCrossEntropy(std::vector<float> &vectorProba, std::vector<floa
 
     return res;
 }
+
+std::string Mercury::contactStringInt(std::string str, const unsigned int integer)
+{
+    std::ostringstream os;
+
+    os << integer;
+
+    return str + os.str();
+}

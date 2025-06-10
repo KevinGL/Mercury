@@ -19,6 +19,7 @@ namespace Mercury
     {
         float bias;
         float value;
+        float gradient;
     };
 
     struct Layer
@@ -32,11 +33,14 @@ namespace Mercury
 
         std::map<std::string, Layer> layers;
         std::map<std::string, float> weights;
+        size_t indexLastLayerHidden;
 
         public :
 
         void Init(const unsigned int nbTokens);
         void feedForward(std::vector<float> &input);
+        void backPropagation(std::vector<float> &vectorProba, std::vector<float> vectorOneHot);
+        void save(const std::string path);
         Layer* getLayer(const std::string id);
     };
 
@@ -141,6 +145,6 @@ namespace Mercury
     size_t getIndexMax(std::vector<float> &values);
     std::vector<float> getVectorOneHot(const size_t index, const unsigned int nbTokens);
     float getCrossEntropy(std::vector<float> &vectorProba, std::vector<float> &vectorAttempted, const unsigned int nbTokens);
-    void backPropagation(std::vector<float> &vectorProba, std::vector<float> &vectorAttempted, Network &network, std::vector<float> &embedding);
+    std::string contactStringInt(std::string str, const unsigned int integer);
 }
 
