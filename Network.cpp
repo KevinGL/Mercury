@@ -49,6 +49,8 @@ void Mercury::Network::Init(const unsigned int nbTokens)
             n.bias = (rand() % 101) / 100.0f;
 
             layers["hidden" + os.str()].neurons.push_back(n);
+
+            std::cout << "Init() : hidden" + os.str() << std::endl;
         }
     }
 
@@ -69,11 +71,17 @@ void Mercury::Network::Init(const unsigned int nbTokens)
     //////////////////////////////////////////
     //////////////////////////////////////////
 
+    weights.resize(layers.size() - 1);
+
+    weights[0].resize(layers["input"].neurons.size());
+
     for(size_t i = 0 ; i < layers["input"].neurons.size() ; i++)
     {
+        weights[0][i].resize(layers["hidden1"].neurons.size());
+
         for(size_t j = 0 ; j < layers["hidden1"].neurons.size() ; j++)
         {
-            std::ostringstream os1;
+            /*std::ostringstream os1;
             os1 << i;
 
             std::ostringstream os2;
@@ -81,8 +89,10 @@ void Mercury::Network::Init(const unsigned int nbTokens)
 
             const std::string key = "input#" + os1.str() + "_hidden1#" + os2.str();
 
-            //weights[key] = (rand() % 101) / 100.0f;
-            weights[key] = ((rand() / (float)RAND_MAX) - 0.5f) * sqrtf(2.0f / layers["input"].neurons.size());
+            weights[key] = (rand() % 201 - 100) / 100.0f;*/
+
+            //weights[0][i][j] = (rand() % 201 - 100) / 100.0f;
+            weights[0][i][j] = (rand() % 101 - 50) / 100.0f;
         }
     }
 
@@ -103,11 +113,15 @@ void Mercury::Network::Init(const unsigned int nbTokens)
             break;
         }
 
+        weights[index].resize(layers[nameLayer1].neurons.size());
+
         for(size_t i = 0 ; i < layers[nameLayer1].neurons.size() ; i++)
         {
+            weights[index][i].resize(layers[nameLayer2].neurons.size());
+
             for(size_t j = 0 ; j < layers[nameLayer2].neurons.size() ; j++)
             {
-                std::ostringstream neuronLayer1;
+                /*std::ostringstream neuronLayer1;
                 neuronLayer1 << i;
 
                 std::ostringstream neuronLayer2;
@@ -117,8 +131,10 @@ void Mercury::Network::Init(const unsigned int nbTokens)
 
                 //std::cout << key << std::endl;
 
-                //weights[key] = (rand() % 101) / 100.0f;
-                weights[key] = ((rand() / (float)RAND_MAX) - 0.5f) * sqrtf(2.0f / layers[nameLayer1].neurons.size());
+                weights[key] = (rand() % 201 - 100) / 100.0f;*/
+
+                //weights[index][i][j] = (rand() % 201 - 100) / 100.0f;
+                weights[index][i][j] = (rand() % 101 - 150) / 100.0f;
             }
         }
 
@@ -130,11 +146,15 @@ void Mercury::Network::Init(const unsigned int nbTokens)
 
     indexLastLayerHidden = index;
 
+    weights[indexLastLayerHidden].resize(layers["hidden" + nameLayerLast.str()].neurons.size());
+
     for(size_t i = 0 ; i < layers["hidden" + nameLayerLast.str()].neurons.size() ; i++)
     {
+        weights[indexLastLayerHidden][i].resize(layers["output"].neurons.size());
+
         for(size_t j = 0 ; j < layers["output"].neurons.size() ; j++)
         {
-            std::ostringstream os1;
+            /*std::ostringstream os1;
             os1 << i;
 
             std::ostringstream os2;
@@ -144,8 +164,10 @@ void Mercury::Network::Init(const unsigned int nbTokens)
 
             //std::cout << key << std::endl;
 
-            //weights[key] = (rand() % 101) / 100.0f;
-            weights[key] = ((rand() / (float)RAND_MAX) - 0.5f) * sqrtf(2.0f / layers["hidden" + nameLayerLast.str()].neurons.size());
+            weights[key] = (rand() % 201 - 100) / 100.0f;*/
+
+            //weights[indexLastLayerHidden][i][j] = (rand() % 201 - 100) / 100.0f;
+            weights[indexLastLayerHidden][i][j] = (rand() % 101 - 50) / 100.0f;
         }
     }
 
@@ -154,6 +176,12 @@ void Mercury::Network::Init(const unsigned int nbTokens)
 
 void Mercury::Network::feedForward(std::vector<float> &input)
 {
+    if(!weights.size())
+    {
+        std::cout << "Mercury : Error, network not initialized" << std::endl;
+        return;
+    }
+
     for(size_t i = 0 ; i < input.size() ; i++)
     {
         if(i > layers["input"].neurons.size() - 1)
@@ -173,14 +201,16 @@ void Mercury::Network::feedForward(std::vector<float> &input)
 
         for(size_t j = 0 ; j < layers["input"].neurons.size() ; j++)
         {
-            std::ostringstream indexNeuronLayerPrev;
+            /*std::ostringstream indexNeuronLayerPrev;
             indexNeuronLayerPrev << j;
 
             const std::string key = "input#" + indexNeuronLayerPrev.str() + "_hidden1#" + indexNeuronLayerActual.str();
 
             //std::cout << key << " => " << weights.count(key) << std::endl;
 
-            sum += weights[key] * layers["input"].neurons[j].value;
+            sum += weights[key] * layers["input"].neurons[j].value;*/
+
+            sum += weights[0][j][i] * layers["input"].neurons[j].value;
         }
 
         layers["hidden1"].neurons[i].value = sum + layers["hidden1"].neurons[i].bias;
@@ -213,14 +243,16 @@ void Mercury::Network::feedForward(std::vector<float> &input)
 
             for(size_t j = 0 ; j < layers[nameLayerPrev].neurons.size() ; j++)
             {
-                std::ostringstream indexNeuronLayerPrev;
+                /*std::ostringstream indexNeuronLayerPrev;
                 indexNeuronLayerPrev << j;
 
                 const std::string key = nameLayerPrev + "#" + indexNeuronLayerPrev.str() + "_" + nameLayerActual + "#" + indexNeuronLayerActual.str();
 
                 //std::cout << key << std::endl;
 
-                sum += weights[key] * layers[nameLayerPrev].neurons[j].value;
+                sum += weights[key] * layers[nameLayerPrev].neurons[j].value;*/
+
+                sum += weights[index][j][i] * layers[nameLayerPrev].neurons[j].value;
             }
 
             layers[nameLayerActual].neurons[i].value = sum + layers[nameLayerActual].neurons[i].bias;
@@ -243,28 +275,47 @@ void Mercury::Network::feedForward(std::vector<float> &input)
 
         for(size_t j = 0 ; j < layers[nameLayerPrev].neurons.size() ; j++)
         {
-            std::ostringstream indexNeuronLayerPrev;
+            /*std::ostringstream indexNeuronLayerPrev;
             indexNeuronLayerPrev << j;
 
             const std::string key = nameLayerPrev + "#" + indexNeuronLayerPrev.str() + "_output#" + indexNeuronLayerActual.str();
 
             //std::cout << key << std::endl;
 
-            sum += weights[key] * layers[nameLayerPrev].neurons[j].value;
+            sum += weights[key] * layers[nameLayerPrev].neurons[j].value;*/
+
+            sum += weights[index][j][i] * layers[nameLayerPrev].neurons[j].value;
         }
 
         layers["output"].neurons[i].value = sum + layers["output"].neurons[i].bias;
+        //std::cout << layers["output"].neurons[i].value << std::endl;
     }
 
     //std::cout << "Mercury : Feed forward ok" << std::endl;
+
+    //getch();
 }
 
-void Mercury::Network::backPropagation(std::vector<float> &vectorProba, std::vector<float> vectorOneHot)
+void Mercury::Network::backPropagation(std::vector<float> &vectorProba, std::vector<float> &vectorOneHot)
 {
+    if(!weights.size())
+    {
+        std::cout << "Mercury : Error, network not initialized" << std::endl;
+        return;
+    }
+
+    /*for(auto& kv : layers)
+    {
+        for(Neuron &n : kv.second.neurons)
+        {
+            n.gradient = 0.0f;
+        }
+    }*/
+
     const float learningRate = 0.1f;
 
     std::string nameActualLayer = "output";
-    std::string namePrevLayer = contactStringInt("hidden", indexLastLayerHidden);
+    std::string namePrevLayer = concatStringInt("hidden", indexLastLayerHidden);
 
     for(size_t i = 0 ; i < layers[nameActualLayer].neurons.size() ; i++)
     {
@@ -272,14 +323,16 @@ void Mercury::Network::backPropagation(std::vector<float> &vectorProba, std::vec
 
         for(size_t j = 0 ; j < layers[namePrevLayer].neurons.size() ; j++)
         {
-            std::ostringstream os1, os2;
+            //std::ostringstream os1, os2;
 
-            os1 << i;
-            os2 << j;
+            //os1 << i;
+            //os2 << j;
 
-            const std::string key = namePrevLayer + "#" + os2.str() + "_" + nameActualLayer + "#" + os1.str();
+            //const std::string key = namePrevLayer + "#" + os2.str() + "_" + nameActualLayer + "#" + os1.str();
 
-            weights[key] -= learningRate * gradient * layers[namePrevLayer].neurons[j].value;
+            //weights[key] -= learningRate * gradient * layers[namePrevLayer].neurons[j].value;
+
+            weights[weights.size() - 1][j][i] -= learningRate * gradient * layers[namePrevLayer].neurons[j].value;
         }
 
         layers[nameActualLayer].neurons[i].bias -= learningRate * gradient;
@@ -290,7 +343,7 @@ void Mercury::Network::backPropagation(std::vector<float> &vectorProba, std::vec
     size_t indexPrevLayer = indexLastLayerHidden - 1;
     if(indexPrevLayer > 0)
     {
-        namePrevLayer = contactStringInt("hidden", indexPrevLayer);
+        namePrevLayer = concatStringInt("hidden", indexPrevLayer);
     }
     else
     {
@@ -305,33 +358,58 @@ void Mercury::Network::backPropagation(std::vector<float> &vectorProba, std::vec
 
             for(size_t j = 0 ; j < layers[namePrevLayer].neurons.size() ; j++)
             {
-                std::ostringstream os1, os2;
+                //std::ostringstream os1, os2;
 
-                os1 << i;
-                os2 << j;
+                //os1 << i;
+                //os2 << j;
 
-                const std::string key = nameActualLayer + "#" + os1.str() + "_" + namePrevLayer + "#" + os2.str();
+                //const std::string key = nameActualLayer + "#" + os1.str() + "_" + namePrevLayer + "#" + os2.str();
 
-                gradient += layers[nameActualLayer].neurons[j].gradient * weights[key];
+                //gradient += layers[nameActualLayer].neurons[j].gradient * weights[key];
+
+                float w = weights[indexPrevLayer][j][i];
+                float g = layers[nameActualLayer].neurons[j].gradient;
+                float prod = g * w;
+
+                if (std::isnan(prod) || std::isinf(prod)) {
+                    std::cout << "Anomaly detected at i=" << i << ", j=" << j << std::endl;
+                    std::cout << "  weight = " << w << std::endl;
+                    std::cout << "  gradient = " << g << std::endl;
+                    std::cout << "  product = " << prod << std::endl;
+                    std::cout << "  neuron value = " << layers[nameActualLayer].neurons[j].value << std::endl;
+                    exit(1);
+                }
+
+                gradient += layers[nameActualLayer].neurons[j].gradient * weights[indexPrevLayer][j][i];
             }
 
             gradient *= derivReLU(layers[nameActualLayer].neurons[i].value);
+
+            float clip = 1e3f;
+            if (gradient > clip) gradient = clip;
+            if (gradient < -clip) gradient = -clip;
+
             layers[nameActualLayer].neurons[i].gradient = gradient;
 
             for(size_t j = 0 ; j < layers[namePrevLayer].neurons.size() ; j++)
             {
-                std::ostringstream os1, os2;
+                //std::ostringstream os1, os2;
 
-                os1 << i;
-                os2 << j;
+                //os1 << i;
+                //os2 << j;
 
-                const std::string key = namePrevLayer + "#" + os2.str() + "_" + nameActualLayer + "#" + os1.str();
+                //const std::string key = namePrevLayer + "#" + os2.str() + "_" + nameActualLayer + "#" + os1.str();
 
-                weights[key] -= learningRate * gradient * layers[namePrevLayer].neurons[j].value;
+                //weights[key] -= learningRate * gradient * layers[namePrevLayer].neurons[j].value;
+
+                weights[indexPrevLayer][j][i] -= learningRate * gradient * layers[namePrevLayer].neurons[j].value;
+                //std::cout << layers[namePrevLayer].neurons[j].value << " " << gradient << std::endl;
             }
 
             layers[nameActualLayer].neurons[i].bias -= learningRate * gradient;
         }
+
+        //getch();
 
         if(namePrevLayer == "input")
         {
@@ -342,7 +420,7 @@ void Mercury::Network::backPropagation(std::vector<float> &vectorProba, std::vec
 
         if(indexPrevLayer > 0)
         {
-            namePrevLayer = contactStringInt("hidden", indexPrevLayer);
+            namePrevLayer = concatStringInt("hidden", indexPrevLayer);
         }
         else
         {
@@ -365,6 +443,12 @@ Mercury::Layer* Mercury::Network::getLayer(const std::string id)
 
 void Mercury::Network::save(const std::string path)
 {
+    if(!weights.size())
+    {
+        std::cout << "Mercury : Error, network not initialized" << std::endl;
+        return;
+    }
+
     std::ofstream file(path);
 
     file << "----Layers----" << std::endl;
@@ -381,9 +465,20 @@ void Mercury::Network::save(const std::string path)
 
     file << "----Weights----" << std::endl;
 
-    for(const auto& weight : weights)
+    /*for(const auto& weight : weights)
     {
-        file << weight.first << " " << weight.second << std::endl;
+        file << "    " << weight.first << " " << weight.second << std::endl;
+    }*/
+
+    for(const std::vector<std::vector<float>>& betweenLayers : weights)
+    {
+        for(const std::vector<float>& fromLayer : betweenLayers)
+        {
+            for(const float weight : fromLayer)
+            {
+                file << "    " << weight << std::endl;
+            }
+        }
     }
 
     file.close();

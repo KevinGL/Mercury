@@ -180,9 +180,14 @@ void Mercury::softmax(Layer *layer, std::vector<float> &res)
         sum += e;
     }
 
+    size_t index = 0;
+
     for(float e : expVals)
     {
         res.push_back(e / sum);
+        layer->neurons[index].value = e / sum;
+
+        index++;
     }
 }
 
@@ -232,12 +237,14 @@ float Mercury::getCrossEntropy(std::vector<float> &vectorProba, std::vector<floa
     for(size_t i = 0 ; i < nbTokens ; i++)
     {
         res -= vectorAttempted[i] * log(vectorProba[i]);
+
+        //std::cout << "getCrossEntropy() : vectorProba=" << vectorProba[i] << " vectorAttempted=" << vectorAttempted[i] << std::endl;
     }
 
     return res;
 }
 
-std::string Mercury::contactStringInt(std::string str, const unsigned int integer)
+std::string Mercury::concatStringInt(std::string str, const unsigned int integer)
 {
     std::ostringstream os;
 

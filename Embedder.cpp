@@ -92,6 +92,7 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
         if(pair.first != 1 && pair.second != 1)     //Case spaces
         {
             float crossEntropy;
+            size_t counter = 0;
 
             while(1)
             {
@@ -114,10 +115,18 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
 
                     //std::cout << "Cross entropy : " << crossEntropy << std::endl;
 
+                    //getch();
+
                     predictionNetwork.backPropagation(vectorProba, vectorOneHot);
                 }
 
                 if(crossEntropy < 0.05f)
+                {
+                    break;
+                }
+
+                counter++;
+                if(counter > 100)
                 {
                     break;
                 }
