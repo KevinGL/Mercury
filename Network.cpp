@@ -49,8 +49,6 @@ void Mercury::Network::Init(const unsigned int nbTokens)
             n.bias = (rand() % 101) / 100.0f;
 
             layers["hidden" + os.str()].neurons.push_back(n);
-
-            std::cout << "Init() : hidden" + os.str() << std::endl;
         }
     }
 

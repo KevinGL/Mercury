@@ -252,3 +252,42 @@ std::string Mercury::concatStringInt(std::string str, const unsigned int integer
 
     return str + os.str();
 }
+
+void Mercury::normalize(std::vector<float> &vec)
+{
+    float lg = 0.0f;
+
+    for(const float coord : vec)
+    {
+        lg += coord * coord;
+    }
+
+    lg = sqrt(lg);
+
+    if(lg == 0.0f)
+    {
+        return;
+    }
+
+    for(float &coord : vec)
+    {
+        coord /= lg;
+    }
+}
+
+float Mercury::dotProduct(std::vector<float> &v1, std::vector<float> &v2)
+{
+    if(v1.size() != v2.size())
+    {
+        return 0.0f;
+    }
+
+    float res = 0.0f;
+
+    for(size_t i = 0 ; i < v1.size() ; i++)
+    {
+        res += v1[i] * v2[i];
+    }
+
+    return res;
+}

@@ -83,6 +83,8 @@ namespace Mercury
         std::map<std::vector<float>, unsigned int> embToId;
         Network predictionNetwork;
 
+        void InitRandom(Tokenizer &tokenizer);
+        void assimilate(std::vector<std::wstring> &corpusText, Tokenizer &tokenizer);
         void InitNetwork(Tokenizer &tokenizer);
 
         public :
@@ -147,5 +149,7 @@ namespace Mercury
     std::vector<float> getVectorOneHot(const size_t index, const unsigned int nbTokens);
     float getCrossEntropy(std::vector<float> &vectorProba, std::vector<float> &vectorAttempted, const unsigned int nbTokens);
     std::string concatStringInt(std::string str, const unsigned int integer);
+    float dotProduct(std::vector<float> &v1, std::vector<float> &v2);
+    void normalize(std::vector<float> &vec);
 }
 

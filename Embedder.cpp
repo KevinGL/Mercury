@@ -1,30 +1,71 @@
 #include "Mercury.h"
 
+void Mercury::Embedder::InitRandom(Mercury::Tokenizer &tokenizer)
+{
+    for(const auto& kv : tokenizer.getTokens())
+    {
+        std::vector<float> embedding;
+
+        for(size_t i = 0 ; i < MERCURY_MAX_SIZE_EMBEDDINGS ; i++)
+        {
+            const float coord = (rand() % 201 - 100) / 100.0f;
+            embedding.push_back(coord);
+        }
+
+        normalize(embedding);
+
+        embeddings[kv.second] = embedding;
+    }
+
+    std::cout << "Embeddings init ok" << std::endl;
+}
+
+void Mercury::Embedder::assimilate(std::vector<std::wstring> &corpusText, Tokenizer &tokenizer)
+{
+    const float rate = 0.1f;
+
+    for(const std::wstring line : corpusText)
+    {
+        std::vector<unsigned int> tokens = tokenizer.encode(line);
+
+        if(tokens.size())
+        {
+            for(size_t i = 0 ; i < tokens.size() - 2 ; i++)
+            {
+                const unsigned int context1 = tokens[i + 0];
+                const unsigned int subject = tokens[i + 1];
+                const unsigned int context2 = tokens[i + 2];
+
+                for(size_t j = 0 ; j < MERCURY_MAX_SIZE_EMBEDDINGS ; j++)
+                {
+                    if(embeddings.count(context1) && embeddings.count(subject) && subject != 1 && context1 != 1)
+                    {
+                        embeddings[context1][j] += rate * (embeddings[subject][j] - embeddings[context1][j]);
+                        embeddings[subject][j] += rate * (embeddings[context1][j] - embeddings[subject][j]);
+                    }
+
+                    if(embeddings.count(context2) && embeddings.count(subject) && subject != 1 && context2 != 1)
+                    {
+                        embeddings[context2][j] += rate * (embeddings[subject][j] - embeddings[context2][j]);
+                        embeddings[subject][j] += rate * (embeddings[context2][j] - embeddings[subject][j]);
+                    }
+                }
+
+                normalize(embeddings[subject]);
+                normalize(embeddings[context1]);
+                normalize(embeddings[context2]);
+            }
+        }
+    }
+}
+
 void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
 {
     InitNetwork(tokenizer);
 
     std::vector<unsigned int> arrayIds = tokenizer.getArrayIds();
 
-    for(const auto& kv : tokenizer.getTokens())
-    {
-        for(size_t i = 0 ; i < MERCURY_MAX_SIZE_EMBEDDINGS ; i++)
-        {
-            embeddings[kv.second].push_back((rand() % 201 - 100) / 100.0f);
-        }
-    }
-
-    /*for(const auto& kv : embeddings)
-    {
-        std::cout << kv.first << " => [";
-
-        for(const float value : kv.second)
-        {
-            std::cout << value << " ";
-        }
-
-        std::cout << "]" << std::endl;
-    }*/
+    InitRandom(tokenizer);
 
     std::vector<std::pair<unsigned int, unsigned int>> pairs;
 
@@ -45,6 +86,44 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
     }
 
     file.close();
+
+    for(unsigned int pass = 0 ; pass < 10 ; pass++)
+    {
+        assimilate(corpusText, tokenizer);
+    }
+
+    /*for(const std::wstring line : corpusText)
+    {
+        std::vector<unsigned int> tokens = tokenizer.encode(line);
+
+        if(tokens.size())
+        {
+            for(size_t i = 0 ; i < tokens.size() - 2 ; i++)
+            {
+                const unsigned int context1 = tokens[i + 0];
+                const unsigned int subject = tokens[i + 1];
+                const unsigned int context2 = tokens[i + 2];
+
+                if(subject != 1 && context1 != 1)
+                {
+                    const float dot = dotProduct(embeddings[subject], embeddings[context1]);
+
+                    std::wcout << tokenizer.getIds()[context1] << L" " << tokenizer.getIds()[subject] << L" => " << dot << std::endl;
+                    getch();
+                }
+
+                if(subject != 1 && context2 != 1)
+                {
+                    const float dot = dotProduct(embeddings[subject], embeddings[context2]);
+
+                    std::wcout << tokenizer.getIds()[context2] << L" " << tokenizer.getIds()[subject] << L" => " << dot << std::endl;
+                    getch();
+                }
+            }
+        }
+    }
+
+    return;*/
 
     for(const std::wstring line : corpusText)
     {
@@ -112,6 +191,12 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
                 {
                     std::vector<float> vectorOneHot = getVectorOneHot(indexAttempted, tokenizer.getTokens().size());
                     crossEntropy = getCrossEntropy(vectorProba, vectorOneHot, tokenizer.getTokens().size());
+
+                    if(std::isnan(crossEntropy) || std::isinf(crossEntropy))
+                    {
+                        std::cout << "Cross entropy value NaN or infinite, stop processus" << std::endl;
+                        break;
+                    }
 
                     //std::cout << "Cross entropy : " << crossEntropy << std::endl;
 
