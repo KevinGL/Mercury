@@ -193,7 +193,7 @@ void Mercury::softmax(Layer *layer, std::vector<float> &res)
 
 size_t Mercury::getIndexMax(std::vector<float> &values)
 {
-    size_t res;
+    size_t res = 0;
     float valMax = -1.0f;
 
     for(size_t i = 0 ; i < values.size() ; i++)
@@ -232,13 +232,12 @@ std::vector<float> Mercury::getVectorOneHot(const size_t index, const unsigned i
 float Mercury::getCrossEntropy(std::vector<float> &vectorProba, std::vector<float> &vectorAttempted, const unsigned int nbTokens)
 {
     float res = 0.0f;
+    const float epsilon = 1e-8f;
 
     //for(size_t i = 0 ; i < MERCURY_MAX_TOKENS_OUTPUT_LAYER ; i++)
     for(size_t i = 0 ; i < nbTokens ; i++)
     {
-        res -= vectorAttempted[i] * log(vectorProba[i]);
-
-        //std::cout << "getCrossEntropy() : vectorProba=" << vectorProba[i] << " vectorAttempted=" << vectorAttempted[i] << std::endl;
+        res -= vectorAttempted[i] * log(vectorProba[i] + epsilon);
     }
 
     return res;
@@ -287,6 +286,21 @@ float Mercury::dotProduct(std::vector<float> &v1, std::vector<float> &v2)
     for(size_t i = 0 ; i < v1.size() ; i++)
     {
         res += v1[i] * v2[i];
+    }
+
+    return res;
+}
+
+unsigned int Mercury::nbRepeats(std::string &str, const char value)
+{
+    unsigned int res = 0;
+
+    for(const char ch : str)
+    {
+        if(ch == value)
+        {
+            res++;
+        }
     }
 
     return res;

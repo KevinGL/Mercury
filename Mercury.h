@@ -43,6 +43,8 @@ namespace Mercury
         void backPropagation(std::vector<float> &vectorProba, std::vector<float> &vectorOneHot);
         void save(const std::string path);
         Layer* getLayer(const std::string id);
+        void loadDatas(const std::string path);
+        void clear();
     };
 
     class Tokenizer
@@ -80,7 +82,6 @@ namespace Mercury
         private :
 
         std::map<unsigned int, std::vector<float>> embeddings;
-        std::map<std::vector<float>, unsigned int> embToId;
         Network predictionNetwork;
 
         void InitRandom(Tokenizer &tokenizer);
@@ -90,6 +91,15 @@ namespace Mercury
         public :
 
         void learn(const std::string path, Tokenizer &tokenizer);
+        void loadDatas(const std::string path);
+        Network &getPredNetwork()
+        {
+            return predictionNetwork;
+        };
+        std::map<unsigned int, std::vector<float>>& getEmbeddings()
+        {
+            return embeddings;
+        };
     };
 
     class ChatBot
@@ -151,5 +161,6 @@ namespace Mercury
     std::string concatStringInt(std::string str, const unsigned int integer);
     float dotProduct(std::vector<float> &v1, std::vector<float> &v2);
     void normalize(std::vector<float> &vec);
+    unsigned int nbRepeats(std::string &str, const char value);
 }
 

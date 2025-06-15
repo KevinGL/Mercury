@@ -2,7 +2,7 @@
 
 void Mercury::Network::Init(const unsigned int nbTokens)
 {
-    for(size_t i = 0 ; i < MERCURY_MAX_SIZE_EMBEDDINGS ; i++)
+    for(size_t i = 0 ; i < 2 * MERCURY_MAX_SIZE_EMBEDDINGS ; i++)
     {
         Neuron n;
 
@@ -457,7 +457,8 @@ void Mercury::Network::save(const std::string path)
 
         for(const Neuron &neuron : layer.second.neurons)
         {
-            file << "        " << neuron.bias << " " << neuron.value << std::endl;
+            //file << "        " << neuron.bias << " " << neuron.value << std::endl;
+            file << "        " << neuron.bias << std::endl;
         }
     }
 
@@ -468,16 +469,172 @@ void Mercury::Network::save(const std::string path)
         file << "    " << weight.first << " " << weight.second << std::endl;
     }*/
 
-    for(const std::vector<std::vector<float>>& betweenLayers : weights)
+    for(const std::vector<std::vector<float>>& matrix : weights)
     {
-        for(const std::vector<float>& fromLayer : betweenLayers)
+        file << "                    ";
+
+        for(size_t i = 0 ; i < matrix[0].size() ; i++)
         {
-            for(const float weight : fromLayer)
+            std::ostringstream os;
+
+            os << i;
+
+            file << "n" << os.str();
+
+            for(size_t j = os.str().length() + 1 ; j < 20 ; j++)
             {
-                file << "    " << weight << std::endl;
+                file << " ";
+            }
+        }
+
+        file << std::endl;
+
+        size_t index = 0;
+
+        for(const std::vector<float>& line : matrix)
+        {
+            std::ostringstream os;
+
+            os << index;
+
+            file << "n" << os.str();
+
+            for(size_t j = os.str().length() + 1 ; j < 20 ; j++)
+            {
+                file << " ";
+            }
+
+            for(const float weight : line)
+            {
+                file << weight;
+
+                std::ostringstream os;
+
+                os << weight;
+
+                for(size_t j = os.str().length() ; j < 20 ; j++)
+                {
+                    file << " ";
+                }
+            }
+
+            index++;
+
+            file << std::endl;
+        }
+
+        file << std::endl;
+    }
+
+    file.close();
+}
+
+void Mercury::Network::loadDatas(const std::string path)
+{
+    std::ifstream file(path);
+
+    if(!file)
+    {
+        return;
+    }
+
+    std::string datasToLoad = "";
+    std::string nameLayer = "";
+    std::string neuronDatas = "";
+
+    size_t indexBetLayers = 0;
+    size_t indexFromLayer = 0;
+    size_t indexWeight = 0;
+
+    std::vector<std::vector<float>> matrix;
+
+    while(1)
+    {
+        std::string line;
+
+        if(!getline(file, line))
+        {
+            break;
+        }
+
+        if(line.find("----") != std::string::npos)
+        {
+            datasToLoad = line;
+            datasToLoad.erase(0, 4);
+            datasToLoad.erase(datasToLoad.length() - 4);
+        }
+
+        else
+        if(datasToLoad == "Layers")
+        {
+            if(nbRepeats(line, ' ') == 4)
+            {
+                nameLayer = line;
+                nameLayer.erase(0, 4);
+            }
+
+            else
+            {
+                //if(nbRepeats(line, ' ') == 9)
+                if(nbRepeats(line, ' ') == 8)
+                {
+                    neuronDatas = line;
+                    neuronDatas.erase(0, 8);
+
+                    Neuron neuron;
+                    //sscanf(neuronDatas.c_str(), "%f %f\n", &neuron.bias, &neuron.value);
+                    neuron.bias = atof(neuronDatas.c_str());
+
+                    layers[nameLayer].neurons.push_back(neuron);
+                }
+            }
+        }
+
+        else
+        if(datasToLoad == "Weights")
+        {
+            if(line.find("n") == 0)
+            {
+                std::string value = "";
+
+                std::vector<float> lineFloat;
+
+                for(size_t i = 20 ; i < line.length() ; i++)
+                {
+                    if(line[i] != ' ')
+                    {
+                        value += line[i];
+                    }
+
+                    else
+                    {
+                        if(value != "")
+                        {
+                            lineFloat.push_back(atof(value.c_str()));
+                        }
+
+                        value = "";
+                    }
+                }
+                lineFloat.push_back(atof(value.c_str()));
+
+                matrix.push_back(lineFloat);
+            }
+
+            else
+            if(line == "")
+            {
+                weights.push_back(matrix);
+                matrix.clear();
             }
         }
     }
 
     file.close();
+}
+
+void Mercury::Network::clear()
+{
+    layers.clear();
+    weights.clear();
 }

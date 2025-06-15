@@ -25,7 +25,8 @@ Mercury::ChatBot::ChatBot()
         file.close();
     }
 
-    //tokenizer.loadDatas(path);
+    tokenizer.loadDatas(path);
+    embedder.loadDatas(path);
 }
 
 void Mercury::ChatBot::learn()
@@ -39,7 +40,7 @@ void Mercury::ChatBot::learn()
 
 void Mercury::ChatBot::prompt(const std::wstring text)
 {
-    std::vector<unsigned int> encoded = tokenizer.encode(text);
+    /*std::vector<unsigned int> encoded = tokenizer.encode(text);
 
     for(const unsigned int e : encoded)
     {
@@ -48,5 +49,24 @@ void Mercury::ChatBot::prompt(const std::wstring text)
 
     std::cout << std::endl;
 
-    std::wcout << tokenizer.decode(encoded) << std::endl;
+    std::wcout << tokenizer.decode(encoded) << std::endl;*/
+
+    std::vector<unsigned int> encoded = tokenizer.encode(text);
+    const unsigned int lastToken = encoded[encoded.size() - 1];
+
+    std::wcout << lastToken << L" (" << tokenizer.getIds()[lastToken] << L")" << std::endl;
+
+    std::vector<float> embedding = embedder.getEmbeddings()[lastToken];
+
+    embedder.getPredNetwork().feedForward(embedding);
+
+    std::vector<unsigned int> arrayIds = tokenizer.getArrayIds();
+
+    std::vector<float> vectorProba;
+    softmax(embedder.getPredNetwork().getLayer("output"), vectorProba);
+    const size_t indexMax = getIndexMax(vectorProba);
+    std::cout << indexMax << " (" << vectorProba.size() - 1 << ")" << std::endl;
+    //const unsigned int tokenPredicted = arrayIds[indexMax];
+
+    //std::wcout << L"=> " << tokenPredicted << L" (" << tokenizer.getIds()[tokenPredicted] << std::endl;
 }

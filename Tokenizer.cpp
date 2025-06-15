@@ -2,6 +2,9 @@
 
 void Mercury::Tokenizer::learn(const std::string path)
 {
+    tokens.clear();
+    idToToken.clear();
+
     std::wifstream file(path + "/Mercury/Corpus.txt");
     //std::wifstream file(path + "/Mercury/Corpus2.txt");
 

@@ -61,13 +61,18 @@ void Mercury::Embedder::assimilate(std::vector<std::wstring> &corpusText, Tokeni
 
 void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
 {
+    embeddings.clear();
+    predictionNetwork.clear();
+
     InitNetwork(tokenizer);
+    //std::cout << tokenizer.getTokens().size() << " tokens " << predictionNetwork.getLayer("output")->neurons.size() << " neurones" << std::endl;
 
     std::vector<unsigned int> arrayIds = tokenizer.getArrayIds();
 
     InitRandom(tokenizer);
 
-    std::vector<std::pair<unsigned int, unsigned int>> pairs;
+    //std::vector<std::pair<unsigned int, unsigned int>> pairs;
+    std::vector<std::vector<unsigned int>> triplets;
 
     std::wifstream file(path + "/Mercury/Corpus2.txt");
 
@@ -91,6 +96,27 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
     {
         assimilate(corpusText, tokenizer);
     }
+
+    std::ofstream file2(path + "/Mercury/Embeddings.txt");
+
+    for(const auto& kv : embeddings)
+    {
+        file2 << kv.first << " [";
+
+        for(size_t i = 0 ; i < kv.second.size() ; i++)
+        {
+            file2 << kv.second[i];
+
+            if(i < kv.second.size() - 1)
+            {
+                file2 << " ";
+            }
+        }
+
+        file2 << "]" << std::endl;
+    }
+
+    file2.close();
 
     /*for(const std::wstring line : corpusText)
     {
@@ -140,22 +166,26 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
         {
             std::pair<unsigned int, unsigned int> pair;
 
-            for(size_t i = 0 ; i < ids.size() - 1 ; i++)
+            for(size_t i = 0 ; i < ids.size() - 2 ; i++)
             {
                 /*std::cout << ids[i + 0] << " => " << embeddings[ids[i + 0]].size() << std::endl;
                 std::cout << ids[i + 1] << " => " << embeddings[ids[i + 1]].size() << std::endl << std::endl;*/
 
-                pair.first = ids[i + 0];
-                pair.second = ids[i + 1];
+                std::vector<unsigned int> triplet;
 
-                pairs.push_back(pair);
+                triplet.push_back(ids[i + 0]);
+                triplet.push_back(ids[i + 1]);
+                triplet.push_back(ids[i + 2]);
+
+                triplets.push_back(triplet);
             }
         }
     }
 
     size_t indexToken = 0;
 
-    for(const std::pair<unsigned int, unsigned int> pair : pairs)
+    //for(const std::pair<unsigned int, unsigned int> pair : pairs)
+    for(const std::vector<unsigned int> triplet : triplets)
     {
         /*for(const float value : kv.second)
         {
@@ -168,23 +198,33 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
 
         //std::cout << pair.first << " " << pair.second << std::endl;
 
-        if(pair.first != 1 && pair.second != 1)     //Case spaces
+        //if(pair.first != 1 && pair.second != 1)     //Case spaces
+        if(triplet[0] != 1 && triplet[1] != 1 && triplet[2] != 1)     //Case spaces
         {
             float crossEntropy;
             size_t counter = 0;
 
             while(1)
             {
-                std::vector<float> embedding = embeddings[pair.first];
+                //std::vector<float> embedding = embeddings[pair.first];
+                std::vector<float> embedding1 = embeddings[triplet[0]];
+                std::vector<float> embedding2 = embeddings[triplet[2]];
+
+                std::vector<float> embedding;
+
+                embedding.insert(embedding.end(), embedding1.begin(), embedding1.end());
+                embedding.insert(embedding.end(), embedding2.begin(), embedding2.end());
 
                 predictionNetwork.feedForward(embedding);
+                normalize(embedding);
 
                 std::vector<float> vectorProba;
                 softmax(predictionNetwork.getLayer("output"), vectorProba);
                 const size_t indexMax = getIndexMax(vectorProba);
                 const unsigned int tokenPredicted = arrayIds[indexMax];
 
-                const int indexAttempted = indexArray(arrayIds, pair.second);
+                //const int indexAttempted = indexArray(arrayIds, pair.second);
+                const int indexAttempted = indexArray(arrayIds, triplet[1]);
 
                 //if(indexAttempted > -1 && indexAttempted < MERCURY_MAX_TOKENS_OUTPUT_LAYER)
                 if(indexAttempted > -1 && indexAttempted < tokenizer.getTokens().size())
@@ -192,13 +232,19 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
                     std::vector<float> vectorOneHot = getVectorOneHot(indexAttempted, tokenizer.getTokens().size());
                     crossEntropy = getCrossEntropy(vectorProba, vectorOneHot, tokenizer.getTokens().size());
 
+                    //std::cout << "Cross entropy : " << crossEntropy << std::endl;
+
                     if(std::isnan(crossEntropy) || std::isinf(crossEntropy))
                     {
                         std::cout << "Cross entropy value NaN or infinite, stop processus" << std::endl;
+
+                        /*for(const float p : vectorProba)
+                        {
+                            std::cout << p << std::endl;
+                        }*/
+
                         break;
                     }
-
-                    //std::cout << "Cross entropy : " << crossEntropy << std::endl;
 
                     //getch();
 
@@ -219,11 +265,19 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
 
             /*std::wcout << L"Learning ok for " << tokenizer.getIds()[pair.first] << L" and " << tokenizer.getIds()[pair.second] << std::endl;
             getch();*/
+
+            const std::wstring token1 = tokenizer.getIds()[triplet[0]];
+            const std::wstring token2 = tokenizer.getIds()[triplet[2]];
+            const std::wstring tokenPredicted = tokenizer.getIds()[triplet[1]];
+
+            /*std::wcout << token1 << L" " << token2 << L") => " << tokenPredicted << std::endl;
+            getch();*/
         }
 
         indexToken++;
 
-        std::cout << indexToken << " on " << pairs.size() << std::endl;
+        //std::cout << indexToken << " on " << pairs.size() << std::endl;
+        std::cout << indexToken << " on " << triplet.size() << std::endl;
     }
 
     predictionNetwork.save(path + "/Mercury/PredictionNetwork.txt");
@@ -232,4 +286,55 @@ void Mercury::Embedder::learn(const std::string path, Tokenizer &tokenizer)
 void Mercury::Embedder::InitNetwork(Mercury::Tokenizer &tokenizer)
 {
     predictionNetwork.Init(tokenizer.getTokens().size());
+}
+
+void Mercury::Embedder::loadDatas(const std::string path)
+{
+    std::ifstream file(path + "/Mercury/Embeddings.txt");
+    if(!file)
+    {
+        return;
+    }
+
+    while(1)
+    {
+        std::string line;
+
+        if(!getline(file, line))
+        {
+            break;
+        }
+
+        std::vector<float> embedding;
+
+        std::string keyStr = line;
+        keyStr.erase(keyStr.find(" "));
+        const unsigned int key = atoi(keyStr.c_str());
+
+        std::string embeddingStr = line;
+        embeddingStr.erase(0, embeddingStr.find(" ") + 1);
+
+        std::string value = "";
+        for(size_t i = 1 ; i < embeddingStr.length() - 1 ; i++)
+        {
+            if(embeddingStr.at(i) != ' ')
+            {
+                value += embeddingStr.at(i);
+            }
+
+            else
+            {
+                embedding.push_back(atof(value.c_str()));
+                value = "";
+            }
+        }
+
+        embedding.push_back(atof(value.c_str()));
+
+        embeddings[key] = embedding;
+    }
+
+    file.close();
+
+    predictionNetwork.loadDatas(path + "/Mercury/PredictionNetwork.txt");
 }
